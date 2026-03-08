@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrollzea</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            'display': ['Space Grotesk', 'sans-serif'],
+            'body': ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+    @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
+    .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
+    .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+    .gradient-border { background: linear-gradient(135deg, #10b981, #3b82f6); padding: 2px; border-radius: 16px; }
+    .glass-effect { backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); }
+    .dark .glass-effect { background: rgba(0,0,0,0.3); }
+    .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-4px) scale(1.02); }
+    .btn-press { transition: transform 0.1s; }
+    .btn-press:active { transform: scale(0.95); }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-slate-50 dark:bg-slate-900 font-body overflow-auto">
+  <div id="app" class="min-h-full flex flex-col"><!-- Onboarding Modal -->
+   <div id="onboarding-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeOnboarding()"></div>
+    <div class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up"><button onclick="closeOnboarding()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+      <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+     <div class="text-center mb-6">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+       <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+       </svg>
+      </div>
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white">Welcome to Scrollzea</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">Let's personalize your experience</p>
+     </div>
+     <form id="onboarding-form" class="space-y-4">
+      <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">WhatsApp Number</label>
+       <div class="flex"><select class="px-3 py-3 rounded-l-xl border border-r-0 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm"> <option>+1</option><option>+44</option><option>+91</option><option>+61</option><option>+81</option> </select> <input type="tel" placeholder="Phone number" class="flex-1 px-4 py-3 rounded-r-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+       </div>
+      </div>
+      <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label> <input type="email" placeholder="your@email.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+      </div>
+      <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Interested In</label>
+       <div class="grid grid-cols-2 gap-2"><label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-500 cursor-pointer transition-colors"> <input type="checkbox" class="w-4 h-4 text-emerald-500 rounded"> <span class="text-sm text-slate-700 dark:text-slate-300">eBooks</span> </label> <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-500 cursor-pointer transition-colors"> <input type="checkbox" class="w-4 h-4 text-emerald-500 rounded"> <span class="text-sm text-slate-700 dark:text-slate-300">App Dev</span> </label> <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-500 cursor-pointer transition-colors"> <input type="checkbox" class="w-4 h-4 text-emerald-500 rounded"> <span class="text-sm text-slate-700 dark:text-slate-300">Logo Design</span> </label> <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-500 cursor-pointer transition-colors"> <input type="checkbox" class="w-4 h-4 text-emerald-500 rounded"> <span class="text-sm text-slate-700 dark:text-slate-300">Games</span> </label>
+       </div>
+      </div><button type="submit" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press"> Get Started </button> <button type="button" onclick="closeOnboarding()" class="w-full py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors text-sm"> Skip for now </button>
+     </form>
+    </div>
+   </div><!-- Header -->
+   <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+     <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+       </svg>
+      </div>
+      <div>
+       <h1 id="header-title" class="text-xl font-display font-bold text-slate-900 dark:text-white">Scrollzea</h1>
+       <p id="header-tagline" class="text-xs text-slate-500 dark:text-slate-400">Global Marketplace</p>
+      </div>
+     </div>
+     <div class="flex items-center gap-2"><button onclick="openDownloadModal()" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press">
+       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+       </svg> Download App </button> <button onclick="navigateTo('cart')" class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+       <svg class="w-5 h-5 text-slate-700 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+       </svg><span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span> </button> <button onclick="toggleMenu()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+       <svg class="w-5 h-5 text-slate-700 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+       </svg></button>
+     </div>
+    </div>
+   </header><!-- Slide-out Menu -->
+   <div id="menu-overlay" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="toggleMenu()"></div>
+    <div id="menu-panel" class="absolute right-0 top-0 h-full w-80 bg-white dark:bg-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300">
+     <div class="p-6">
+      <div class="flex items-center justify-between mb-8">
+       <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">Menu</h2><button onclick="toggleMenu()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+        <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg></button>
+      </div>
+      <nav class="space-y-2"><button onclick="navigateTo('profile'); toggleMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+         <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+         </svg>
+        </div><span class="text-slate-700 dark:text-slate-300 font-medium">Profile</span> </button> <button onclick="navigateTo('history'); toggleMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+         <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+         </svg>
+        </div><span class="text-slate-700 dark:text-slate-300 font-medium">Purchase History</span> </button> <button onclick="navigateTo('reviews'); toggleMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+         <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+         </svg>
+        </div><span class="text-slate-700 dark:text-slate-300 font-medium">Reviews</span> </button> <button onclick="navigateTo('terms'); toggleMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+        <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+         <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+         </svg>
+        </div><span class="text-slate-700 dark:text-slate-300 font-medium">Terms &amp; Conditions</span> </button>
+       <div class="border-t border-slate-200 dark:border-slate-700 my-4"></div>
+       <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-3">
+         <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+          <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+         </div><span class="text-slate-700 dark:text-slate-300 font-medium">Dark Mode</span>
+        </div><button onclick="toggleDarkMode()" id="dark-mode-toggle" class="relative w-12 h-6 bg-slate-200 dark:bg-emerald-500 rounded-full transition-colors">
+         <div class="absolute top-1 left-1 dark:left-6 w-4 h-4 bg-white rounded-full shadow transition-all"></div></button>
+       </div><button onclick="openDownloadModal(); toggleMenu()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-blue-600 text-white mt-4">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg><span class="font-medium">Download App</span> </button>
+      </nav>
+     </div>
+    </div>
+   </div><!-- Main Content -->
+   <main id="main-content" class="flex-1 overflow-auto"><!-- Home Page -->
+    <div id="page-home" class="page-content"><!-- Trending Products Carousel -->
+     <section class="py-6 px-4">
+      <div class="max-w-7xl mx-auto">
+       <div class="flex items-center justify-between mb-4">
+        <h2 id="trending-section-title" class="text-2xl font-display font-bold text-slate-900 dark:text-white">🔥 Trending Now</h2>
+        <div class="flex gap-2"><button onclick="scrollCarousel(-1)" class="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl transition-all">
+          <svg class="w-5 h-5 text-slate-700 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg></button> <button onclick="scrollCarousel(1)" class="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl transition-all">
+          <svg class="w-5 h-5 text-slate-700 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg></button>
+        </div>
+       </div>
+       <div id="trending-carousel" class="flex gap-4 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"><!-- Trending items will be rendered here -->
+       </div>
+      </div>
+     </section><!-- Service Categories -->
+     <section class="py-6 px-4 bg-slate-100/50 dark:bg-slate-800/30">
+      <div class="max-w-7xl mx-auto">
+       <h2 id="services-section-title" class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">📦 Our Services</h2>
+       <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"><!-- Service cards will be rendered here -->
+       </div>
+      </div>
+     </section><!-- Freebies Section -->
+     <section class="py-6 px-4">
+      <div class="max-w-7xl mx-auto">
+       <div class="gradient-border">
+        <div class="bg-white dark:bg-slate-800 rounded-[14px] p-6">
+         <div class="flex flex-col md:flex-row items-center gap-6">
+          <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center animate-float">
+           <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+           </svg>
+          </div>
+          <div class="flex-1 text-center md:text-left">
+           <h3 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-2">🎁 Free Downloads</h3>
+           <p class="text-slate-600 dark:text-slate-400 mb-4">Get free templates, resources, and exclusive content every week!</p><button onclick="showProductDetails(freebiesProduct)" class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all btn-press"> Explore Freebies </button>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </section>
+    </div><!-- Product Details Page -->
+    <div id="page-product" class="page-content hidden">
+     <div class="max-w-4xl mx-auto px-4 py-6"><button onclick="navigateTo('home')" class="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+       </svg> Back to Services </button>
+      <div id="product-details-content"><!-- Product details will be rendered here -->
+      </div>
+     </div>
+    </div><!-- Cart Page -->
+    <div id="page-cart" class="page-content hidden">
+     <div class="max-w-4xl mx-auto px-4 py-6">
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">🛒 Your Cart</h2>
+      <div id="cart-content"><!-- Cart items will be rendered here -->
+      </div>
+     </div>
+    </div><!-- Checkout Page -->
+    <div id="page-checkout" class="page-content hidden">
+     <div class="max-w-2xl mx-auto px-4 py-6"><button onclick="navigateTo('cart')" class="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+       </svg> Back to Cart </button>
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">💳 Checkout</h2>
+      <div id="checkout-content"><!-- Checkout form will be rendered here -->
+      </div>
+     </div>
+    </div><!-- Payment Success Page -->
+    <div id="page-success" class="page-content hidden">
+     <div class="max-w-md mx-auto px-4 py-12 text-center">
+      <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center animate-float">
+       <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+       </svg>
+      </div>
+      <h2 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">Payment Successful! 🎉</h2>
+      <p class="text-slate-600 dark:text-slate-400 mb-2">Thank you for your purchase.</p>
+      <p class="text-slate-500 dark:text-slate-500 text-sm mb-8">Invoice has been sent to your email.</p>
+      <div id="success-order-details" class="bg-slate-100 dark:bg-slate-800 rounded-2xl p-6 mb-6 text-left"><!-- Order details will be rendered here -->
+      </div><button onclick="navigateTo('home')" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press"> Continue Shopping </button>
+     </div>
+    </div><!-- Profile Page -->
+    <div id="page-profile" class="page-content hidden">
+     <div class="max-w-2xl mx-auto px-4 py-6">
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">👤 My Profile</h2>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
+       <div class="flex flex-col items-center mb-6">
+        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center mb-4"><span class="text-3xl">👤</span>
+        </div>
+        <h3 class="text-xl font-display font-bold text-slate-900 dark:text-white">Guest User</h3>
+        <p class="text-slate-500 dark:text-slate-400">guest@scrollzea.com</p>
+       </div>
+       <div class="space-y-4">
+        <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl"><label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Display Name</label> <input type="text" value="Guest User" class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+        </div>
+        <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl"><label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">About Me</label> <textarea rows="3" placeholder="Tell us about yourself..." class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"></textarea>
+        </div><button class="w-full py-3 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all btn-press"> Save Changes </button>
+       </div>
+      </div>
+     </div>
+    </div><!-- Purchase History Page -->
+    <div id="page-history" class="page-content hidden">
+     <div class="max-w-4xl mx-auto px-4 py-6">
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">📋 Purchase History</h2>
+      <div id="history-content"><!-- Purchase history will be rendered here -->
+      </div>
+     </div>
+    </div><!-- Reviews Page -->
+    <div id="page-reviews" class="page-content hidden">
+     <div class="max-w-4xl mx-auto px-4 py-6">
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">⭐ Customer Reviews</h2>
+      <div id="reviews-content" class="space-y-4"><!-- Reviews will be rendered here -->
+      </div>
+     </div>
+    </div><!-- Terms Page -->
+    <div id="page-terms" class="page-content hidden">
+     <div class="max-w-4xl mx-auto px-4 py-6">
+      <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-6">📜 Terms &amp; Conditions</h2>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 prose dark:prose-invert max-w-none">
+       <h3>1. Introduction</h3>
+       <p>Welcome to Scrollzea. By using our services, you agree to these terms and conditions.</p>
+       <h3>2. Services</h3>
+       <p>We provide digital services including eBooks, app development, logo design, business cards, games, and free resources.</p>
+       <h3>3. Payments</h3>
+       <p>All payments are processed securely through PayPal and Razorpay. Refunds are subject to our refund policy.</p>
+       <h3>4. Intellectual Property</h3>
+       <p>All content delivered remains the intellectual property of the client upon full payment.</p>
+       <h3>5. Privacy</h3>
+       <p>We respect your privacy and protect your personal information in accordance with our privacy policy.</p>
+       <h3>6. Contact</h3>
+       <p>For any questions, please reach out through our chat system or email support.</p>
+      </div>
+     </div>
+    </div>
+   </main><!-- Bottom Navigation -->
+   <nav class="sticky bottom-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-2">
+     <div class="flex items-center justify-around"><button onclick="navigateTo('home')" id="nav-home" class="nav-btn flex flex-col items-center gap-1 p-2 rounded-xl text-emerald-600 dark:text-emerald-400">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+       </svg><span class="text-xs font-medium">Home</span> </button> <button onclick="navigateTo('cart')" id="nav-cart" class="nav-btn flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 dark:text-slate-400">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+       </svg><span class="text-xs font-medium">Cart</span> </button> <button onclick="navigateTo('profile')" id="nav-profile" class="nav-btn flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 dark:text-slate-400">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+       </svg><span class="text-xs font-medium">Profile</span> </button> <button onclick="navigateTo('history')" id="nav-history" class="nav-btn flex flex-col items-center gap-1 p-2 rounded-xl text-slate-500 dark:text-slate-400">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+       </svg><span class="text-xs font-medium">History</span> </button>
+     </div>
+    </div>
+   </nav><!-- Floating Chat Button --> <button id="chat-button" onclick="toggleChat()" class="fixed bottom-24 right-4 z-40 w-14 h-14 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-full shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 transition-transform btn-press">
+    <div class="absolute w-full h-full rounded-full bg-emerald-500/30 animate-pulse-ring"></div>
+    <svg class="w-6 h-6 text-white relative z-10" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg></button> <!-- Chat Panel -->
+   <div id="chat-panel" class="fixed bottom-24 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl hidden animate-slide-up">
+    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+     <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+       </svg>
+      </div>
+      <div>
+       <h3 class="font-display font-bold text-slate-900 dark:text-white">Scrollzea Support</h3>
+       <div class="flex items-center gap-1">
+        <div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-xs text-emerald-600 dark:text-emerald-400">Online</span>
+       </div>
+      </div>
+     </div><button onclick="toggleChat()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+      <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+    </div>
+    <div id="chat-messages" class="h-80 overflow-y-auto p-4 space-y-3 scrollbar-hide"><!-- Chat messages will be rendered here -->
+    </div>
+    <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+     <div class="flex items-center gap-2 mb-2"><button onclick="triggerFileUpload()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Attach file">
+       <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+       </svg></button> <button onclick="toggleVoiceRecording()" id="voice-btn" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Voice note">
+       <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+       </svg></button>
+     </div>
+     <form id="chat-form" class="flex gap-2"><input type="text" id="chat-input" placeholder="Type your message..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"> <button type="submit" class="p-3 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all btn-press">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+       </svg></button>
+     </form><input type="file" id="file-input" class="hidden" onchange="handleFileUpload(event)">
+    </div>
+   </div><!-- Download App Modal -->
+   <div id="download-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDownloadModal()"></div>
+    <div class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-slide-up text-center"><button onclick="closeDownloadModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+      <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+     <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+      <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+     </div>
+     <h3 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-2">Download Scrollzea</h3>
+     <p class="text-slate-500 dark:text-slate-400 mb-6">Get the full experience on your device</p>
+     <div class="space-y-3"><button class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors btn-press">
+       <svg class="w-6 h-6" viewbox="0 0 24 24" fill="currentColor">
+        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+       </svg> App Store </button> <button class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors btn-press">
+       <svg class="w-6 h-6" viewbox="0 0 24 24" fill="currentColor">
+        <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
+       </svg> Google Play </button>
+     </div>
+    </div>
+   </div><!-- Toast Notification -->
+   <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 hidden">
+    <div class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-slide-up">
+     <svg id="toast-icon" class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+     </svg><span id="toast-message">Item added to cart</span>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Configuration and State
+    const defaultConfig = {
+      app_title: 'Scrollzea',
+      tagline: 'Global Marketplace',
+      trending_title: '🔥 Trending Now',
+      services_title: '📦 Our Services',
+      background_color: '#f8fafc',
+      surface_color: '#ffffff',
+      text_color: '#1e293b',
+      primary_action_color: '#10b981',
+      secondary_action_color: '#3b82f6',
+      font_family: 'Space Grotesk',
+      font_size: 16
+    };
+
+    let config = { ...defaultConfig };
+    let cart = [];
+    let orders = [];
+    let chatMessages = [];
+    let currentPage = 'home';
+    let selectedProduct = null;
+    let isRecording = false;
+    let onboardingShown = false;
+
+    // Products Data
+    const products = [
+      { id: '1', name: 'Premium eBook Bundle', category: 'eBooks', price: 29.99, originalPrice: 49.99, emoji: '📚', description: 'Collection of 10 premium eBooks on business, marketing, and personal development.', delivery: '2-3 days', rating: 4.8, reviews: 124, trending: true },
+      { id: '2', name: 'Custom App Development', category: 'App Development', price: 499.99, originalPrice: 799.99, emoji: '📱', description: 'Full-stack mobile app development for iOS and Android with modern UI/UX.', delivery: '4-6 weeks', rating: 4.9, reviews: 87, trending: true },
+      { id: '3', name: 'Professional Logo Design', category: 'Logo Design', price: 79.99, originalPrice: 129.99, emoji: '🎨', description: '3 unique logo concepts with unlimited revisions and all file formats.', delivery: '3-5 days', rating: 4.7, reviews: 256, trending: true },
+      { id: '4', name: 'Business Card Design', category: 'Business Cards', price: 39.99, originalPrice: 59.99, emoji: '💼', description: 'Premium business card design with print-ready files and mockups.', delivery: '2-3 days', rating: 4.6, reviews: 189, trending: false },
+      { id: '5', name: 'Mobile Game Development', category: 'Games', price: 999.99, originalPrice: 1499.99, emoji: '🎮', description: 'Custom 2D/3D mobile game development with monetization setup.', delivery: '8-12 weeks', rating: 4.8, reviews: 43, trending: true },
+      { id: '6', name: 'UI/UX Design Package', category: 'Design', price: 199.99, originalPrice: 299.99, emoji: '✨', description: 'Complete UI/UX design for web or mobile applications.', delivery: '1-2 weeks', rating: 4.9, reviews: 167, trending: true },
+      { id: '7', name: 'Social Media Kit', category: 'Marketing', price: 49.99, originalPrice: 79.99, emoji: '📣', description: 'Complete social media branding kit with templates for all platforms.', delivery: '3-4 days', rating: 4.5, reviews: 312, trending: false },
+      { id: '8', name: 'Website Development', category: 'Web Development', price: 299.99, originalPrice: 499.99, emoji: '🌐', description: 'Responsive website development with modern frameworks and CMS.', delivery: '2-3 weeks', rating: 4.8, reviews: 98, trending: false }
+    ];
+
+    const freebiesProduct = { id: 'freebie', name: 'Free Resource Pack', category: 'Freebies', price: 0, emoji: '🎁', description: 'Weekly free templates, icons, and resources for designers and developers.', delivery: 'Instant', rating: 5.0, reviews: 1024 };
+
+    const sampleReviews = [
+      { id: 1, name: 'Sarah M.', rating: 5, comment: 'Amazing quality and fast delivery! Will definitely order again.', date: '2 days ago', product: 'Logo Design' },
+      { id: 2, name: 'James K.', rating: 5, comment: 'The app development team exceeded my expectations. Highly recommended!', date: '1 week ago', product: 'App Development' },
+      { id: 3, name: 'Emily R.', rating: 4, comment: 'Great eBooks with valuable content. Worth every penny.', date: '2 weeks ago', product: 'eBook Bundle' },
+      { id: 4, name: 'Michael T.', rating: 5, comment: 'Professional service and excellent communication throughout.', date: '3 weeks ago', product: 'Business Cards' }
+    ];
+
+    // AI Chat Responses
+    const aiResponses = {
+      greeting: "👋 Hi there! Welcome to Scrollzea! I'm your AI assistant. How can I help you today?",
+      services: "We offer a variety of digital services including:\n\n📚 eBooks & Digital Content\n📱 App Development\n🎨 Logo & Graphic Design\n💼 Business Cards\n🎮 Game Development\n🎁 Free Resources\n\nWhat interests you?",
+      pricing: "Our pricing is competitive and transparent. Each service page shows detailed pricing. Would you like me to help you find a specific service?",
+      delivery: "Delivery times vary by service:\n• eBooks: 2-3 days\n• Logo Design: 3-5 days\n• App Development: 4-6 weeks\n• Games: 8-12 weeks\n\nNeed something faster? Let me know!",
+      payment: "We accept payments through:\n💳 PayPal\n💳 Razorpay\n\nAll transactions are secure and you'll receive an invoice via email.",
+      default: "I'd love to help you with that! Could you tell me more about what you're looking for? You can share:\n\n• Your brand name\n• Budget expectations\n• Any reference images or links\n\nI'll make sure to connect you with our team!"
+    };
+
+    // Data SDK Handler
+    const dataHandler = {
+      onDataChanged(data) {
+        orders = data.filter(d => d.type === 'order');
+        chatMessages = data.filter(d => d.type === 'chat');
+        renderHistory();
+        renderChatHistory();
+      }
+    };
+
+    // Initialize SDKs
+    async function initApp() {
+      // Initialize Data SDK
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error('Data SDK init failed');
+        }
+      }
+
+      // Initialize Element SDK
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (newConfig) => {
+            config = { ...config, ...newConfig };
+            applyConfig();
+          },
+          mapToCapabilities: (cfg) => ({
+            recolorables: [
+              { get: () => cfg.background_color || defaultConfig.background_color, set: (v) => { cfg.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+              { get: () => cfg.surface_color || defaultConfig.surface_color, set: (v) => { cfg.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+              { get: () => cfg.text_color || defaultConfig.text_color, set: (v) => { cfg.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+              { get: () => cfg.primary_action_color || defaultConfig.primary_action_color, set: (v) => { cfg.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+              { get: () => cfg.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { cfg.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
+            ],
+            borderables: [],
+            fontEditable: { get: () => cfg.font_family || defaultConfig.font_family, set: (v) => { cfg.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+            fontSizeable: { get: () => cfg.font_size || defaultConfig.font_size, set: (v) => { cfg.font_size = v; window.elementSdk.setConfig({ font_size: v }); } }
+          }),
+          mapToEditPanelValues: (cfg) => new Map([
+            ['app_title', cfg.app_title || defaultConfig.app_title],
+            ['tagline', cfg.tagline || defaultConfig.tagline],
+            ['trending_title', cfg.trending_title || defaultConfig.trending_title],
+            ['services_title', cfg.services_title || defaultConfig.services_title]
+          ])
+        });
+        config = { ...defaultConfig, ...window.elementSdk.config };
+      }
+
+      applyConfig();
+      renderApp();
+      
+      // Show onboarding after a short delay
+      setTimeout(() => {
+        if (!onboardingShown && !localStorage.getItem('scrollzea_onboarded')) {
+          document.getElementById('onboarding-modal').classList.remove('hidden');
+          onboardingShown = true;
+        }
+      }, 1000);
+    }
+
+    function applyConfig() {
+      const root = document.documentElement;
+      
+      // Apply text content
+      document.getElementById('header-title').textContent = config.app_title || defaultConfig.app_title;
+      document.getElementById('header-tagline').textContent = config.tagline || defaultConfig.tagline;
+      document.getElementById('trending-section-title').textContent = config.trending_title || defaultConfig.trending_title;
+      document.getElementById('services-section-title').textContent = config.services_title || defaultConfig.services_title;
+
+      // Apply fonts
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+      document.body.style.fontFamily = `${fontFamily}, Inter, sans-serif`;
+      document.body.style.fontSize = `${fontSize}px`;
+    }
+
+    function renderApp() {
+      renderTrendingCarousel();
+      renderServicesGrid();
+      renderReviews();
+      updateCartBadge();
+      addInitialChatMessage();
+    }
+
+    function renderTrendingCarousel() {
+      const carousel = document.getElementById('trending-carousel');
+      const trending = products.filter(p => p.trending);
+      
+      carousel.innerHTML = trending.map(product => `
+        <div class="flex-none w-72 snap-start">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer" onclick="showProductDetails(products.find(p => p.id === '${product.id}'))">
+            <div class="h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+              <span class="text-6xl">${product.emoji}</span>
+            </div>
+            <div class="p-4">
+              <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full">${product.category}</span>
+              <h3 class="font-display font-bold text-slate-900 dark:text-white mt-2 line-clamp-1">${product.name}</h3>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">$${product.price}</span>
+                ${product.originalPrice ? `<span class="text-sm text-slate-400 line-through">$${product.originalPrice}</span>` : ''}
+              </div>
+              <div class="flex items-center gap-1 mt-2">
+                <span class="text-amber-400">★</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400">${product.rating} (${product.reviews})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderServicesGrid() {
+      const grid = document.getElementById('services-grid');
+      
+      grid.innerHTML = products.map(product => `
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden card-hover">
+          <div class="h-32 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+            <span class="text-5xl">${product.emoji}</span>
+          </div>
+          <div class="p-4">
+            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">${product.category}</span>
+            <h3 class="font-display font-semibold text-slate-900 dark:text-white mt-1 line-clamp-1">${product.name}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${product.description}</p>
+            <div class="flex items-center justify-between mt-3">
+              <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">$${product.price}</span>
+              <div class="flex gap-1">
+                <button onclick="event.stopPropagation(); showProductDetails(products.find(p => p.id === '${product.id}'))" class="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">More</button>
+                <button onclick="event.stopPropagation(); addToCart(products.find(p => p.id === '${product.id}'))" class="px-3 py-1.5 text-xs font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors btn-press">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function showProductDetails(product) {
+      selectedProduct = product;
+      const content = document.getElementById('product-details-content');
+      
+      content.innerHTML = `
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl overflow-hidden">
+          <div class="h-64 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+            <span class="text-8xl animate-float">${product.emoji}</span>
+          </div>
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <span class="text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-full">${product.category}</span>
+                <h1 class="text-2xl font-display font-bold text-slate-900 dark:text-white mt-3">${product.name}</h1>
+              </div>
+              <div class="text-right">
+                <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">$${product.price}</div>
+                ${product.originalPrice ? `<div class="text-sm text-slate-400 line-through">$${product.originalPrice}</div>` : ''}
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-4 mb-6">
+              <div class="flex items-center gap-1">
+                <span class="text-amber-400 text-lg">★</span>
+                <span class="font-semibold text-slate-900 dark:text-white">${product.rating}</span>
+                <span class="text-slate-500 dark:text-slate-400">(${product.reviews} reviews)</span>
+              </div>
+              <div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>${product.delivery}</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <h3 class="font-display font-semibold text-slate-900 dark:text-white mb-2">Description</h3>
+              <p class="text-slate-600 dark:text-slate-400 leading-relaxed">${product.description}</p>
+            </div>
+            
+            <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+              <h3 class="font-display font-semibold text-slate-900 dark:text-white mb-3">What's Included</h3>
+              <ul class="space-y-2">
+                <li class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  Premium quality deliverables
+                </li>
+                <li class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  Unlimited revisions
+                </li>
+                <li class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  24/7 support
+                </li>
+              </ul>
+            </div>
+            
+            <div class="flex gap-3">
+              <button onclick="addToCart(selectedProduct)" class="flex-1 py-4 px-6 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors btn-press">
+                Add to Cart
+              </button>
+              <button onclick="buyNow(selectedProduct)" class="flex-1 py-4 px-6 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press">
+                Buy Now
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      navigateTo('product');
+    }
+
+    function addToCart(product) {
+      const existing = cart.find(item => item.id === product.id);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      updateCartBadge();
+      showToast('Added to cart!');
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      updateCartBadge();
+      renderCart();
+    }
+
+    function updateQuantity(productId, delta) {
+      const item = cart.find(i => i.id === productId);
+      if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+          removeFromCart(productId);
+        } else {
+          renderCart();
+        }
+      }
+    }
+
+    function updateCartBadge() {
+      const badge = document.getElementById('cart-badge');
+      const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+      badge.textContent = total;
+      badge.classList.toggle('hidden', total === 0);
+    }
+
+    function renderCart() {
+      const content = document.getElementById('cart-content');
+      
+      if (cart.length === 0) {
+        content.innerHTML = `
+          <div class="text-center py-12">
+            <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h3 class="text-xl font-display font-bold text-slate-900 dark:text-white mb-2">Your cart is empty</h3>
+            <p class="text-slate-500 dark:text-slate-400 mb-6">Browse our services and add items to your cart</p>
+            <button onclick="navigateTo('home')" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all btn-press">
+              Browse Services
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      content.innerHTML = `
+        <div class="space-y-4 mb-6">
+          ${cart.map(item => `
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 flex items-center gap-4">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center flex-shrink-0">
+                <span class="text-3xl">${item.emoji}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-display font-semibold text-slate-900 dark:text-white truncate">${item.name}</h4>
+                <p class="text-emerald-600 dark:text-emerald-400 font-bold">$${item.price}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="updateQuantity('${item.id}', -1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors">
+                  <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                </button>
+                <span class="w-8 text-center font-semibold text-slate-900 dark:text-white">${item.quantity}</span>
+                <button onclick="updateQuantity('${item.id}', 1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors">
+                  <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+              </div>
+              <button onclick="removeFromCart('${item.id}')" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+          <div class="flex justify-between mb-2">
+            <span class="text-slate-600 dark:text-slate-400">Subtotal</span>
+            <span class="font-semibold text-slate-900 dark:text-white">$${subtotal.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between mb-4">
+            <span class="text-slate-600 dark:text-slate-400">Tax</span>
+            <span class="font-semibold text-slate-900 dark:text-white">$0.00</span>
+          </div>
+          <div class="border-t border-slate-200 dark:border-slate-700 pt-4 mb-6">
+            <div class="flex justify-between">
+              <span class="text-lg font-display font-bold text-slate-900 dark:text-white">Total</span>
+              <span class="text-2xl font-display font-bold text-emerald-600 dark:text-emerald-400">$${subtotal.toFixed(2)}</span>
+            </div>
+          </div>
+          <button onclick="navigateTo('checkout')" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press">
+            Proceed to Checkout
+          </button>
+        </div>
+      `;
+    }
+
+    function renderCheckout() {
+      const content = document.getElementById('checkout-content');
+      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      content.innerHTML = `
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-slate-900 dark:text-white mb-4">Order Summary</h3>
+            <div class="space-y-3">
+              ${cart.map(item => `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">${item.emoji}</span>
+                    <span class="text-slate-700 dark:text-slate-300">${item.name} × ${item.quantity}</span>
+                  </div>
+                  <span class="font-semibold text-slate-900 dark:text-white">$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="border-t border-slate-200 dark:border-slate-700 mt-4 pt-4">
+              <div class="flex justify-between text-xl font-display font-bold">
+                <span class="text-slate-900 dark:text-white">Total</span>
+                <span class="text-emerald-600 dark:text-emerald-400">$${subtotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-slate-900 dark:text-white mb-4">Payment Method</h3>
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 p-4 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl cursor-pointer">
+                <input type="radio" name="payment" value="paypal" checked class="w-5 h-5 text-emerald-500">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">💳</span>
+                  <span class="font-medium text-slate-900 dark:text-white">PayPal</span>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-4 border-2 border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+                <input type="radio" name="payment" value="razorpay" class="w-5 h-5 text-emerald-500">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">🏦</span>
+                  <span class="font-medium text-slate-900 dark:text-white">Razorpay</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-slate-900 dark:text-white mb-4">Contact Information</h3>
+            <div class="space-y-4">
+              <input type="email" placeholder="Email for invoice" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+              <input type="text" placeholder="Full name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+            </div>
+          </div>
+          
+          <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl mb-6">
+            <p class="text-amber-800 dark:text-amber-200 text-sm">
+              <strong>Demo Mode:</strong> This is a sample checkout. No actual payment will be processed.
+            </p>
+          </div>
+          
+          <button onclick="processPayment()" id="pay-btn" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all btn-press">
+            Pay $${subtotal.toFixed(2)}
+          </button>
+        </div>
+      `;
+    }
+
+    async function processPayment() {
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-flex items-center gap-2"><svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Processing...</span>';
+      
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const orderId = 'ORD-' + Date.now().toString().slice(-8);
+      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Save order to Data SDK
+      if (window.dataSdk && orders.length < 999) {
+        await window.dataSdk.create({
+          type: 'order',
+          userId: 'guest',
+          productId: cart.map(i => i.id).join(','),
+          productName: cart.map(i => i.name).join(', '),
+          price: subtotal,
+          quantity: cart.reduce((s, i) => s + i.quantity, 0),
+          status: 'completed',
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      // Show success page
+      document.getElementById('success-order-details').innerHTML = `
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="text-slate-600 dark:text-slate-400">Order ID</span>
+            <span class="font-mono font-semibold text-slate-900 dark:text-white">${orderId}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600 dark:text-slate-400">Items</span>
+            <span class="font-semibold text-slate-900 dark:text-white">${cart.length}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600 dark:text-slate-400">Total</span>
+            <span class="font-semibold text-emerald-600 dark:text-emerald-400">$${subtotal.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+      
+      cart = [];
+      updateCartBadge();
+      navigateTo('success');
+    }
+
+    function buyNow(product) {
+      cart = [{ ...product, quantity: 1 }];
+      updateCartBadge();
+      navigateTo('checkout');
+    }
+
+    function renderHistory() {
+      const content = document.getElementById('history-content');
+      
+      if (orders.length === 0) {
+        content.innerHTML = `
+          <div class="text-center py-12">
+            <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <h3 class="text-xl font-display font-bold text-slate-900 dark:text-white mb-2">No orders yet</h3>
+            <p class="text-slate-500 dark:text-slate-400 mb-6">Your purchase history will appear here</p>
+            <button onclick="navigateTo('home')" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all btn-press">
+              Start Shopping
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="space-y-4">
+          ${orders.map(order => `
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-mono text-sm text-slate-500 dark:text-slate-400">Order #${order.__backendId?.slice(-8) || 'N/A'}</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}">${order.status || 'Processing'}</span>
+              </div>
+              <h4 class="font-display font-semibold text-slate-900 dark:text-white">${order.productName || 'Order'}</h4>
+              <div class="flex items-center justify-between mt-2">
+                <span class="text-slate-500 dark:text-slate-400">${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Recent'}</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400">$${order.price?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderReviews() {
+      const content = document.getElementById('reviews-content');
+      content.innerHTML = sampleReviews.map(review => `
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-bold">
+                ${review.name.charAt(0)}
+              </div>
+              <div>
+                <h4 class="font-display font-semibold text-slate-900 dark:text-white">${review.name}</h4>
+                <p class="text-sm text-slate-500 dark:text-slate-400">${review.product}</p>
+              </div>
+            </div>
+            <span class="text-sm text-slate-400">${review.date}</span>
+          </div>
+          <div class="flex items-center gap-1 mb-2">
+            ${Array(5).fill(0).map((_, i) => `<span class="text-${i < review.rating ? 'amber' : 'slate'}-400">★</span>`).join('')}
+          </div>
+          <p class="text-slate-600 dark:text-slate-400">${review.comment}</p>
+        </div>
+      `).join('');
+    }
+
+    // Chat System
+    function addInitialChatMessage() {
+      if (chatMessages.length === 0) {
+        chatMessages = [{ sender: 'ai', message: aiResponses.greeting, time: new Date().toISOString(), isAI: true }];
+      }
+      renderChatHistory();
+    }
+
+    function renderChatHistory() {
+      const container = document.getElementById('chat-messages');
+      const messages = chatMessages.length > 0 ? chatMessages : [{ sender: 'ai', message: aiResponses.greeting, isAI: true }];
+      
+      container.innerHTML = messages.map(msg => `
+        <div class="flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-[80%] ${msg.sender === 'user' ? 'bg-gradient-to-r from-emerald-500 to-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'} rounded-2xl px-4 py-3 ${msg.sender === 'user' ? 'rounded-br-md' : 'rounded-bl-md'}">
+            ${msg.fileType ? `<div class="flex items-center gap-2 mb-2 p-2 bg-white/20 rounded-lg"><span>📎</span><span class="text-sm">${msg.fileName || 'File'}</span></div>` : ''}
+            <p class="whitespace-pre-line text-sm">${msg.message}</p>
+          </div>
+        </div>
+      `).join('');
+      
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function toggleChat() {
+      const panel = document.getElementById('chat-panel');
+      const btn = document.getElementById('chat-button');
+      panel.classList.toggle('hidden');
+      btn.classList.toggle('hidden', !panel.classList.contains('hidden'));
+    }
+
+    async function sendMessage(message, isFile = false, fileName = '') {
+      const userMsg = { sender: 'user', message, time: new Date().toISOString(), isAI: false };
+      if (isFile) {
+        userMsg.fileType = 'file';
+        userMsg.fileName = fileName;
+      }
+      chatMessages.push(userMsg);
+      renderChatHistory();
+
+      // Save to Data SDK
+      if (window.dataSdk && chatMessages.length < 999) {
+        await window.dataSdk.create({
+          type: 'chat',
+          userId: 'guest',
+          message: message,
+          sender: 'user',
+          isAI: false,
+          fileType: isFile ? 'file' : '',
+          fileName: fileName,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      // AI Response
+      setTimeout(async () => {
+        let response = aiResponses.default;
+        const lowerMsg = message.toLowerCase();
+        
+        if (lowerMsg.includes('service') || lowerMsg.includes('offer')) response = aiResponses.services;
+        else if (lowerMsg.includes('price') || lowerMsg.includes('cost')) response = aiResponses.pricing;
+        else if (lowerMsg.includes('delivery') || lowerMsg.includes('time')) response = aiResponses.delivery;
+        else if (lowerMsg.includes('pay') || lowerMsg.includes('payment')) response = aiResponses.payment;
+        else if (lowerMsg.includes('hi') || lowerMsg.includes('hello')) response = aiResponses.greeting;
+
+        const aiMsg = { sender: 'ai', message: response, time: new Date().toISOString(), isAI: true };
+        chatMessages.push(aiMsg);
+        renderChatHistory();
+
+        if (window.dataSdk && chatMessages.length < 999) {
+          await window.dataSdk.create({
+            type: 'chat',
+            userId: 'guest',
+            message: response,
+            sender: 'ai',
+            isAI: true,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }, 1500);
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (message) {
+        sendMessage(message);
+        input.value = '';
+      }
+    });
+
+    function triggerFileUpload() {
+      document.getElementById('file-input').click();
+    }
+
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        sendMessage(`Shared file: ${file.name}`, true, file.name);
+        e.target.value = '';
+      }
+    }
+
+    function toggleVoiceRecording() {
+      const btn = document.getElementById('voice-btn');
+      isRecording = !isRecording;
+      
+      if (isRecording) {
+        btn.classList.add('bg-red-100', 'dark:bg-red-900/30');
+        btn.innerHTML = '<svg class="w-5 h-5 text-red-500 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>';
+        setTimeout(() => {
+          if (isRecording) {
+            toggleVoiceRecording();
+            sendMessage('🎤 Voice note (3 seconds)', true, 'Voice Note');
+          }
+        }, 3000);
+      } else {
+        btn.classList.remove('bg-red-100', 'dark:bg-red-900/30');
+        btn.innerHTML = '<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>';
+      }
+    }
+
+    // Navigation
+    function navigateTo(page) {
+      currentPage = page;
+      document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`page-${page}`).classList.remove('hidden');
+      
+      // Update nav buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+        btn.classList.add('text-slate-500', 'dark:text-slate-400');
+      });
+      const activeNav = document.getElementById(`nav-${page}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-500', 'dark:text-slate-400');
+        activeNav.classList.add('text-emerald-600', 'dark:text-emerald-400');
+      }
+
+      // Show/hide chat button
+      const chatBtn = document.getElementById('chat-button');
+      chatBtn.classList.toggle('hidden', page === 'checkout' || page === 'success');
+
+      // Render page-specific content
+      if (page === 'cart') renderCart();
+      if (page === 'checkout') renderCheckout();
+      if (page === 'history') renderHistory();
+
+      // Scroll to top
+      document.getElementById('main-content').scrollTop = 0;
+    }
+
+    function scrollCarousel(direction) {
+      const carousel = document.getElementById('trending-carousel');
+      carousel.scrollBy({ left: direction * 300, behavior: 'smooth' });
+    }
+
+    // Menu
+    function toggleMenu() {
+      const overlay = document.getElementById('menu-overlay');
+      const panel = document.getElementById('menu-panel');
+      overlay.classList.toggle('hidden');
+      setTimeout(() => {
+        panel.classList.toggle('translate-x-full');
+      }, 10);
+    }
+
+    // Dark Mode
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('scrollzea_dark', document.documentElement.classList.contains('dark'));
+    }
+
+    // Apply saved dark mode preference
+    if (localStorage.getItem('scrollzea_dark') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+
+    // Modals
+    function closeOnboarding() {
+      document.getElementById('onboarding-modal').classList.add('hidden');
+      localStorage.setItem('scrollzea_onboarded', 'true');
+    }
+
+    function openDownloadModal() {
+      document.getElementById('download-modal').classList.remove('hidden');
+    }
+
+    function closeDownloadModal() {
+      document.getElementById('download-modal').classList.add('hidden');
+    }
+
+    // Toast
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const msg = document.getElementById('toast-message');
+      
+      msg.textContent = message;
+      icon.innerHTML = isError 
+        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'
+        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+      icon.classList.toggle('text-red-400', isError);
+      icon.classList.toggle('text-emerald-400', !isError);
+      
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Onboarding form
+    document.getElementById('onboarding-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      showToast('Welcome to Scrollzea! 🎉');
+      closeOnboarding();
+    });
+
+    // Initialize
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d8a075637803a46',t:'MTc3Mjg5MTAwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
