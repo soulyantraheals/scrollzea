@@ -239,22 +239,30 @@
           <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
         </div>
       </section>
-      <section class="py-6 px-4">
+      <!-- FREEBIES SECTION -->
+      <section class="py-6 px-4" id="freebies-section">
         <div class="max-w-7xl mx-auto">
-          <div class="gradient-border">
-            <div class="bg-white dark:bg-slate-800 rounded-[14px] p-6">
-              <div class="flex flex-col md:flex-row items-center gap-6">
-                <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center animate-float">
-                  <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
-                </div>
-                <div class="flex-1 text-center md:text-left">
-                  <h3 class="text-2xl font-display font-bold text-slate-900 dark:text-white mb-2">🎁 Free Downloads</h3>
-                  <p class="text-slate-600 dark:text-slate-400 mb-4">Get free templates, resources, and exclusive content every week!</p>
-                  <button onclick="showProductDetails(freebiesProduct)" class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all btn-press">Explore Freebies</button>
-                </div>
-              </div>
-            </div>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-display font-bold text-slate-900 dark:text-white">🎁 Free Downloads</h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">100% Free Forever</span>
           </div>
+
+          <!-- Category Tabs -->
+          <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6">
+            <button onclick="filterFreebies('all')" id="freebie-tab-all"
+              class="freebie-tab flex-none px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white transition-all">All</button>
+            <button onclick="filterFreebies('ebook')" id="freebie-tab-ebook"
+              class="freebie-tab flex-none px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all">📚 eBooks</button>
+            <button onclick="filterFreebies('game')" id="freebie-tab-game"
+              class="freebie-tab flex-none px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all">🎮 Games</button>
+            <button onclick="filterFreebies('utility')" id="freebie-tab-utility"
+              class="freebie-tab flex-none px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all">🛠️ Utility Apps</button>
+            <button onclick="filterFreebies('template')" id="freebie-tab-template"
+              class="freebie-tab flex-none px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all">🎨 Templates</button>
+          </div>
+
+          <!-- Freebies Grid -->
+          <div id="freebies-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
       </section>
     </div>
@@ -483,13 +491,23 @@
 // ============================================================
 // 🔧 YOUR KEYS — REPLACE THESE
 // ============================================================
+// HOW TELEGRAM HUMAN TAKEOVER WORKS:
+// 1. Client sends message → you get Telegram notification instantly
+// 2. To reply AS YOURSELF (cancels AI):
+//      /r_SCZ1234 Hi! Thanks for reaching out, tell me more about your logo
+// 3. If you don't reply in 20 seconds → AI (Zea) answers automatically
+// 4. Client sees either "🎨 Designer" (you) or "🤖 Zea" (AI)
+// 5. You NEVER directly exchange numbers — all chat is in the app
+// NOTE: /r_ replies need the Cloudflare Worker webhook set up (Week 3)
+//       Until then, your replies go through Firebase Admin manually
+// ============================================================
 const RAZORPAY_KEY = "rzp_test_REPLACE_WITH_YOUR_KEY"; // Get from razorpay.com dashboard
 // ⚠️ DO NOT put your Claude API key here anymore.
 // Instead, deploy the Cloudflare Worker and paste your worker URL below.
 // Guide: workers.cloudflare.com → Create Worker → paste worker code → add CLAUDE_KEY secret
 const CLOUDFLARE_WORKER_URL = "https://YOUR-WORKER.workers.dev/chat"; // ← replace this
-const TELEGRAM_BOT_TOKEN = "8699164364:AAEMcWSb5_I9yjmp_Y6IRC8pvJSt3h0SdhI";    // From @BotFather on Telegram
-const TELEGRAM_CHAT_ID = "5653758820";   // Your personal Telegram chat ID
+const TELEGRAM_BOT_TOKEN = "REPLACE_WITH_BOT_TOKEN";    // From @BotFather on Telegram
+const TELEGRAM_CHAT_ID = "REPLACE_WITH_YOUR_CHAT_ID";   // Your personal Telegram chat ID
 // ============================================================
 
 // ---- STATE ----
@@ -502,6 +520,9 @@ let currentBookingId = null;
 let deferredInstallPrompt = null;
 let chatUnsubscribe = null;
 let isAITyping = false;
+let humanReplied = false; // flag: you replied from Telegram
+let humanTakeoverTimer = null; // kept for handleDesignerReply compatibility
+let humanReplyUnsubscribe = null; // Firebase listener for your Telegram replies
 
 // ---- SERVICES DATA ----
 const products = [
@@ -516,6 +537,123 @@ const products = [
 ];
 
 const freebiesProduct = { id: 'freebie', name: 'Free Resource Pack', category: 'Freebies', price: 0, emoji: '🎁', description: 'Weekly free templates, icons, and resources for designers and developers.', delivery: 'Instant', rating: 5.0, reviews: 1024, type: 'digital' };
+
+// ---- FREEBIES DATA ----
+// To add your own: fill in name, description, category, and links below
+const freebiesData = [
+  {
+    id: 'f1', name: 'Brand Strategy eBook', category: 'ebook',
+    emoji: '📖', description: 'Learn how to build a powerful brand from scratch. 45 pages of actionable strategy.',
+    pwaLink: 'https://scrollzea.vercel.app',       // your vercel PWA link
+    iosLink: '#',                                    // App Store link (coming soon)
+    playLink: '#',                                   // Play Store link (coming soon)
+    directLink: '#'                                  // direct PDF download link
+  },
+  {
+    id: 'f2', name: 'Social Media Templates', category: 'template',
+    emoji: '🎨', description: '50 ready-to-use Canva templates for Instagram, Facebook & LinkedIn.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: '#'
+  },
+  {
+    id: 'f3', name: 'Tap Ninja — Casual Game', category: 'game',
+    emoji: '🎮', description: 'Fun free casual game. Tap to survive! Available on all platforms.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: null
+  },
+  {
+    id: 'f4', name: 'Logo Inspiration eBook', category: 'ebook',
+    emoji: '📚', description: '200 world-class logo designs analyzed. Great reference for any designer.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: '#'
+  },
+  {
+    id: 'f5', name: 'Budget Tracker App', category: 'utility',
+    emoji: '💰', description: 'Simple free utility to track your daily expenses. Works offline.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: null
+  },
+  {
+    id: 'f6', name: 'Color Palette Generator', category: 'utility',
+    emoji: '🌈', description: 'Generate beautiful color palettes for your brand instantly.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: null
+  },
+  {
+    id: 'f7', name: 'Puzzle Quest', category: 'game',
+    emoji: '🧩', description: 'Brain-teasing puzzle game. 100 levels, completely free.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: null
+  },
+  {
+    id: 'f8', name: 'Business Card Templates', category: 'template',
+    emoji: '💼', description: '30 premium business card designs. Download and edit in Canva.',
+    pwaLink: 'https://scrollzea.vercel.app',
+    iosLink: '#', playLink: '#', directLink: '#'
+  }
+];
+
+let activeFreebieTab = 'all';
+
+function filterFreebies(category) {
+  activeFreebieTab = category;
+  // Update tab styles
+  document.querySelectorAll('.freebie-tab').forEach(btn => {
+    btn.classList.remove('bg-emerald-500', 'text-white');
+    btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+  });
+  const activeTab = document.getElementById(`freebie-tab-${category}`);
+  if (activeTab) {
+    activeTab.classList.add('bg-emerald-500', 'text-white');
+    activeTab.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+  }
+  renderFreebies();
+}
+
+function renderFreebies() {
+  const grid = document.getElementById('freebies-grid');
+  if (!grid) return;
+  const filtered = activeFreebieTab === 'all'
+    ? freebiesData
+    : freebiesData.filter(f => f.category === activeFreebieTab);
+
+  grid.innerHTML = filtered.map(item => `
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 card-hover">
+      <div class="flex items-start gap-3 mb-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 flex items-center justify-center flex-shrink-0">
+          <span class="text-3xl">${item.emoji}</span>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-display font-bold text-slate-900 dark:text-white text-sm leading-tight">${item.name}</h4>
+          <span class="text-xs text-purple-600 dark:text-purple-400 font-medium capitalize">${item.category}</span>
+        </div>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full">FREE</span>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">${item.description}</p>
+      <div class="space-y-2">
+        ${item.directLink ? `
+        <a href="${item.directLink}" target="_blank"
+          class="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold rounded-xl hover:shadow-lg transition-all btn-press">
+          ⬇️ Direct Download
+        </a>` : ''}
+        <div class="grid grid-cols-3 gap-1.5">
+          <a href="${item.pwaLink}" target="_blank"
+            class="flex flex-col items-center gap-1 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-xl hover:bg-emerald-100 transition-all btn-press">
+            🌐<span class="text-[10px]">PWA</span>
+          </a>
+          <a href="${item.iosLink}" target="_blank"
+            class="flex flex-col items-center gap-1 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl hover:bg-slate-100 transition-all btn-press">
+            🍎<span class="text-[10px]">iOS</span>
+          </a>
+          <a href="${item.playLink}" target="_blank"
+            class="flex flex-col items-center gap-1 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-xl hover:bg-blue-100 transition-all btn-press">
+            🎮<span class="text-[10px]">Play</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
 
 const sampleReviews = [
   { id: 1, name: 'Sarah M.', rating: 5, comment: 'Amazing quality and fast delivery! The logo was exactly what I envisioned.', date: '2 days ago', product: 'Logo Design' },
@@ -553,21 +691,71 @@ async function notifyTelegramFile(fileUrl, caption) {
 }
 
 // ---- FIREBASE CHAT (Two-way real-time) ----
+
+// Central handler when designer replies from Telegram — called by both listeners
+function handleDesignerReply(text, fileUrl) {
+  if (replyLock) return; // AI already replied for this message — too late
+  replyLock    = true;
+  humanReplied = true;
+
+  if (humanTakeoverTimer) {
+    clearTimeout(humanTakeoverTimer);
+    humanTakeoverTimer = null;
+  }
+  document.getElementById('wait-bar')?.remove();
+  removeTypingIndicator();
+  isAITyping = false;
+
+  appendChatMessage('designer', text, fileUrl || null, '🎨 Designer');
+  saveChatMessageToHistory('designer', text);
+}
 function listenToBookingChat(bookingId) {
   if (!window._firebase) return;
   const { db, collection, query, orderBy, onSnapshot } = window._firebase;
 
-  // Unsubscribe from previous listener
   if (chatUnsubscribe) chatUnsubscribe();
+  if (humanReplyUnsubscribe) humanReplyUnsubscribe();
 
   const q = query(collection(db, `chats/${bookingId}/messages`), orderBy('timestamp'));
+  let il1 = true;
   chatUnsubscribe = onSnapshot(q, (snapshot) => {
+    if (il1) { il1 = false; return; } // skip pre-existing messages on first load
     snapshot.docChanges().forEach(change => {
       if (change.type === 'added') {
         const msg = change.doc.data();
-        // Only add designer messages here (client messages already added locally)
         if (msg.from === 'designer') {
+          handleDesignerReply(msg.text, msg.fileUrl || null);
+        }
+      }
+    });
+  });
+}
+
+// Listen for pre-booking human replies (before payment, using session ID)
+function listenForHumanReply(sessionId) {
+  if (!window._firebase || !sessionId) return;
+  const { db, collection, query, orderBy, onSnapshot } = window._firebase;
+
+  if (humanReplyUnsubscribe) humanReplyUnsubscribe();
+
+  const q = query(collection(db, `chatSessions/${sessionId}/messages`), orderBy('timestamp'));
+  let il2 = true;
+  humanReplyUnsubscribe = onSnapshot(q, (snapshot) => {
+    if (il2) { il2 = false; return; }
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const msg = change.doc.data();
+        if (msg.from === 'designer') {
+          // YOU replied — cancel AI
+          if (humanTakeoverTimer) {
+            clearTimeout(humanTakeoverTimer);
+            humanTakeoverTimer = null;
+          }
+          removeTypingIndicator();
+          isAITyping = false;
+          humanReplied = true;
           appendChatMessage('designer', msg.text, msg.fileUrl || null, '🎨 Designer');
+          saveChatMessageToHistory('designer', msg.text);
         }
       }
     });
@@ -695,37 +883,48 @@ function openRazorpayPayment(service, amountINR, bookingId, brief = '') {
 }
 
 // ---- AI CHAT (Claude API) ----
-const SYSTEM_PROMPT = `You are Zea, the friendly AI assistant for Scrollzea — a creative design marketplace.
+const SYSTEM_PROMPT = `You are Zea — a sharp, expert sales and design consultant for Scrollzea, a premium creative design studio in India.
 
-SERVICES & PRICING (in INR):
-- Logo Design: ₹1500–₹8000 (3-5 days, 3 concepts + unlimited revisions)
-- Full Branding Package: ₹5000–₹20000 (7-10 days, logo + cards + social kit)
-- Social Media Graphics: ₹500–₹2000 per post/template
-- Business Card Design: ₹800–₹2500 (2-3 days)
-- UI/UX Design: ₹8000–₹25000 (1-2 weeks)
-- Website Development: ₹15000–₹50000 (2-3 weeks)
-- eBooks: Fixed price, instant download
-- App Development: ₹30000–₹200000 (4-8 weeks)
+SERVICES & PRICING (INR):
+- Logo Design: ₹1500–8000 | 3-5 days | 3 concepts + unlimited revisions
+- Full Branding Package: ₹5000–20000 | 7-10 days | logo + cards + social kit + brand guide
+- Social Media Graphics: ₹500–2000/template | 1-2 days
+- Business Card Design: ₹800–2500 | 2-3 days
+- UI/UX Design: ₹8000–25000 | 1-2 weeks
+- Website Development: ₹15000–50000 | 2-3 weeks
+- App Development: ₹30000–200000 | 4-8 weeks
+- eBooks & Digital Products: instant download
 
 YOUR PERSONALITY:
-- Warm, friendly, professional
-- Use light emojis
-- Keep replies short (2-4 lines max)
-- Address user by name if you know it
+- Confident, warm, expert — like a trusted consultant, not a bot
+- Natural conversational tone — never robotic or scripted
+- Use the client's name whenever you know it
+- Light emojis — professional not casual
+- 2-4 sentences max per reply. Never write walls of text.
+- Always keep conversation moving toward booking
 
-YOUR FLOW:
-1. Greet warmly, ask what they need
-2. Ask clarifying questions (what industry? style? colors? deadline?)
-3. When you have enough info, show them the price range and ask if they want to proceed
-4. When user confirms they want to book, output EXACTLY this on the last line (no spaces before/after):
-   SHOW_PAYMENT:{"service":"Logo Design","amount":3000,"brief":"food startup, modern style, green colors"}
-   
+SALES STRATEGY:
+1. Client mentions a service → confirm you can help + ask 1 focused question (what is the business/industry?)
+2. After their reply → ask 1 more targeted question (style? deadline? budget?)
+3. After 2-3 exchanges → summarize what you understood, present best price, ask for confirmation
+4. On any confirmation/agreement → IMMEDIATELY trigger payment
+5. NEVER ask more than 1 question per reply
+6. If hesitant on price → offer lower tier or emphasize unlimited revisions
+7. YOUR PRIMARY GOAL IS TO CLOSE THE DEAL every single conversation
+
+PAYMENT TRIGGER — when client agrees, output EXACTLY this on its own line:
+SHOW_PAYMENT:{"service":"Logo Design","amount":3000,"brief":"food startup, modern logo, green and white"}
+
+AFTER PAYMENT CONFIRMED:
+- Switch to project manager mode — responsive, organized, professional
+- Ask for reference images or additional brief details
+- You are now their direct project contact until delivery
+
 RULES:
-- Never make up prices outside the ranges above  
-- Never promise delivery faster than listed
-- If asked something you can't answer: "Let me connect you with our designer for that!"
-- Always collect: what service, brief description, budget range — before showing payment
-- After payment is confirmed by system, switch to "designer support mode" — answer project questions, take notes, be helpful
+- Never invent prices outside the ranges above
+- Never promise faster delivery than listed
+- If asked something outside your knowledge: Let me check with our designer and get back to you!
+- Always be moving toward booking — that is your primary goal
 - You can receive and acknowledge images/files the user shares`;
 
 async function callClaudeAPI(userMessage) {
@@ -756,17 +955,29 @@ async function callClaudeAPI(userMessage) {
   }
 }
 
-function simulateAI(msg) {
+async function simulateAI(msg) {
   const m = msg.toLowerCase();
-  if (m.includes('logo')) return "Great choice! 🎨 I'd love to help with your logo design. What type of business is it for, and do you have any style preferences (modern, minimal, bold)?";
-  if (m.includes('brand') || m.includes('branding')) return "A full branding package — perfect for a strong identity! 🌟 What industry is your business in? And do you have any existing brand elements or colors in mind?";
-  if (m.includes('price') || m.includes('cost') || m.includes('how much')) return "Our logo design starts from ₹1500 for basic to ₹8000 for premium (3 concepts + unlimited revisions). What's your budget range? I'll find the best fit for you 💫";
-  if (m.includes('social') || m.includes('instagram')) return "Social media graphics are ₹500–₹2000 per post/template. Are you looking for a one-time post design or a full template kit for regular posting?";
-  if (m.includes('hi') || m.includes('hello') || m.includes('hey')) return "Hey there! 👋 Welcome to Scrollzea! I'm Zea, your creative assistant. Are you looking for logo design, branding, social media graphics, or something else?";
-  if (m.includes('yes') || m.includes('proceed') || m.includes('book') || m.includes('pay')) {
-    return "Awesome! Let me set up your payment now 👇\nSHOW_PAYMENT:{\"service\":\"Logo Design\",\"amount\":3000,\"brief\":\"As discussed in chat\"}";
+  const firstName = window.currentUserName ? window.currentUserName.split(' ')[0] : null;
+  const hi = firstName ? 'Hey ' + firstName + '!' : 'Hey!';
+
+  if (m.includes('logo')) return hi + " Logo design is our specialty 🎨 What's your business — modern and minimal, or bold and expressive?";
+  if (m.includes('brand') || m.includes('branding')) return "Full branding — great call. What industry is your business in, and any existing brand elements we should work with?";
+  if (m.includes('website') || m.includes('web')) return "Website development starts at ₹15,000. What kind — portfolio, business, or ecommerce? And what's your timeline?";
+  if (m.includes('app')) return "App development starts at ₹30,000. Android, iOS, or both? Give me a quick overview of what the app does!";
+  if (m.includes('social') || m.includes('instagram') || m.includes('post')) return "Social media templates from ₹500/template. One-off post or a monthly kit? Which platforms — Instagram, LinkedIn, Facebook?";
+  if (m.includes('price') || m.includes('cost') || m.includes('how much') || m.includes('budget') || m.includes('rate')) return "Quick overview — Logo ₹1500-8000 | Branding ₹5000-20000 | Website ₹15000-50000 | App ₹30000+. Which service interests you?";
+  if (m.includes('ui') || m.includes('ux')) return "UI/UX design starts at ₹8000. What are we designing — mobile app, web app, or dashboard?";
+  if (m.includes('card') || m.includes('business card')) return "Business card design is ₹800–2500, 2-3 days. Already have a logo, or shall we do both together at a better rate?";
+  if (m.includes('hi') || m.includes('hello') || m.includes('hey') || m.includes('start') || m.includes('help')) {
+    return hi + " Welcome to Scrollzea 👋 I'm Zea, your creative consultant. We handle logos, branding, websites and apps. What are you working on?";
   }
-  return "Tell me more about your project! 😊 What service are you looking for, and what's your business about? I'll help you find the perfect package.";
+  if (m.includes('yes') || m.includes('sure') || m.includes('proceed') || m.includes('book') || m.includes('pay') || m.includes('confirm') || m.includes('go ahead') || m.includes('sounds good') || m.includes('ok')) {
+    return "Perfect! Let me lock in your booking right now 👇\nSHOW_PAYMENT:{\"service\":\"Logo Design\",\"amount\":3000,\"brief\":\"As discussed in chat\"}";
+  }
+  if (m.includes('no') || m.includes('expensive') || m.includes('costly')) {
+    return "No problem! Our starter logo is just ₹1500 — one concept, 3 revisions, 3-day delivery. Want to start there?";
+  }
+  return hi + " Tell me about your project and I’ll put together the best option. What's the business?";
 }
 
 // ---- CHAT UI ----
@@ -827,41 +1038,66 @@ async function handleChatSend() {
 
   input.value = '';
   appendChatMessage('user', message);
+  saveChatMessageToHistory('client', message);
 
-  // Always notify on Telegram — booking active or not
   if (currentBookingId) {
-    // Active booking — save to Firebase + notify
-    await saveMessageToFirebase(currentBookingId, 'client', message);
-    await notifyTelegram(`💬 <b>#${currentBookingId}</b> | Client message:\n\n${message}\n\nReply: /reply_${currentBookingId} [message]`);
-  } else {
-    // Pre-booking chat — just notify so you can see what people are asking
-    await notifyTelegram(`📩 <b>Pre-booking Chat</b>\n👤 ${window.currentUserName || 'Guest'} (${window.currentUserEmail || 'no email'})\n\n${message}`);
+    saveMessageToFirebase(currentBookingId, 'client', message);
   }
 
+  // Notify YOU on Telegram instantly
+  const replyId   = currentBookingId || window.currentChatSessionId || 'pre';
+  const replyCmd  = '/r_' + replyId;
+  const userName  = window.currentUserName  || 'Guest';
+  const userEmail = window.currentUserEmail || 'no email';
+  const service   = window.activeServiceContext || 'General';
+
+  notifyTelegram(
+    '📩 <b>' + userName + '</b> (' + service + ')\n' +
+    '"' + message + '"\n\n' +
+    '<code>' + replyCmd + ' reply here to override AI</code>\n' +
+    (currentBookingId ? '📋 Booking #' + currentBookingId : '📂 Session: ' + replyId)
+  );
+
+  if (currentBookingId) {
+    listenToBookingChat(currentBookingId);
+  } else if (window.currentChatSessionId) {
+    listenForHumanReply(window.currentChatSessionId);
+  }
+
+  // AI responds IMMEDIATELY
   isAITyping = true;
+  humanReplied = false;
   showTypingIndicator();
 
   const reply = await callClaudeAPI(message);
 
+  // If YOU replied from Telegram while AI was generating — discard AI response
+  if (humanReplied) {
+    removeTypingIndicator();
+    isAITyping = false;
+    return;
+  }
+
   removeTypingIndicator();
   isAITyping = false;
 
-  // Check if AI wants to show payment
-  if (reply.includes('SHOW_PAYMENT:')) {
-    const cleanReply = reply.split('SHOW_PAYMENT:')[0].trim();
-    if (cleanReply) appendChatMessage('ai', cleanReply, null, 'Zea');
+  const safeReply = reply || "I'm here! What can I help you with? 🙂";
 
+  if (safeReply.includes('SHOW_PAYMENT:')) {
+    const cleanReply = safeReply.split('SHOW_PAYMENT:')[0].trim();
+    if (cleanReply) appendChatMessage('ai', cleanReply, null, '🤖 Zea');
     try {
-      const jsonStr = reply.split('SHOW_PAYMENT:')[1].trim();
-      const paymentData = JSON.parse(jsonStr);
+      const paymentData = JSON.parse(safeReply.split('SHOW_PAYMENT:')[1].trim());
       showPaymentCard(paymentData.service, paymentData.amount, paymentData.brief);
     } catch (e) {
-      appendChatMessage('ai', reply, null, 'Zea');
+      appendChatMessage('ai', safeReply, null, '🤖 Zea');
     }
   } else {
-    appendChatMessage('ai', reply, null, 'Zea');
+    appendChatMessage('ai', safeReply, null, '🤖 Zea');
   }
+  saveChatMessageToHistory('ai', safeReply);
 }
+
 
 function showPaymentCard(service, amount, brief) {
   const bookingId = generateBookingId();
@@ -984,42 +1220,111 @@ function renderTrendingCarousel() {
 
 function renderServicesGrid() {
   const grid = document.getElementById('services-grid');
-  grid.innerHTML = products.map(product => `
+  grid.innerHTML = products.map(product => {
+    const priceINR = Math.round(product.price * 83);
+    const isDigital = product.type === 'digital';
+    return `
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden card-hover">
-      <div class="h-32 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+      <div class="h-32 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center cursor-pointer" onclick="showProductDetails(products.find(p => p.id === '${product.id}'))">
         <span class="text-5xl">${product.emoji}</span>
       </div>
       <div class="p-4">
         <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">${product.category}</span>
         <h3 class="font-display font-semibold text-slate-900 dark:text-white mt-1 line-clamp-1">${product.name}</h3>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${product.description}</p>
-        <div class="flex items-center justify-between mt-3">
-          <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹${Math.round(product.price * 83)}</span>
-          <div class="flex gap-1">
-            <button onclick="event.stopPropagation(); showProductDetails(products.find(p => p.id === '${product.id}'))" class="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">More</button>
-            <button onclick="event.stopPropagation(); openChatForService('${product.name}', ${Math.round(product.price * 83)})" class="px-3 py-1.5 text-xs font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors btn-press">Book</button>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹${priceINR}</span>
+            <span class="text-xs text-slate-400">${product.delivery}</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="event.stopPropagation(); openChatForService('${product.name}', ${priceINR})"
+              class="flex-1 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors btn-press">
+              💬 Chat
+            </button>
+            <button onclick="event.stopPropagation(); buyNowDirect('${product.name}', ${priceINR}, '${product.id}')"
+              class="flex-1 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-500 to-blue-600 rounded-xl hover:shadow-md transition-all btn-press">
+              ⚡ Buy Now
+            </button>
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+// Direct Buy Now — skip chat, go straight to payment
+function buyNowDirect(serviceName, priceINR, productId) {
+  const bookingId = generateBookingId();
+  openRazorpayPayment(serviceName, priceINR, bookingId, 'Direct purchase — no brief provided');
 }
 
 function openChatForService(serviceName, price) {
-  // Open chat and pre-fill with service
+  // Open chat panel
   const chatPanel = document.getElementById('chat-panel');
   chatPanel.classList.remove('hidden');
   document.getElementById('chat-button').classList.add('hidden');
 
-  // Auto-send as user
+  // Set active service context so AI knows what we're discussing
+  window.activeServiceContext = serviceName;
+
+  // Save session to Firebase so you have full chat history per user
+  if (window._firebase) {
+    const { db, collection, addDoc, serverTimestamp } = window._firebase;
+    addDoc(collection(db, 'chatSessions'), {
+      userId: window.currentUserId || 'anonymous',
+      userName: window.currentUserName || 'Guest',
+      userEmail: window.currentUserEmail || '',
+      service: serviceName,
+      startedAt: serverTimestamp()
+    }).then(docRef => {
+      window.currentChatSessionId = docRef.id;
+      // Start listening immediately for your Telegram replies
+      listenForHumanReply(docRef.id);
+    }).catch(() => {});
+  }
+
+  // Clear existing chat and start fresh for this service
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '';
+  chatHistory = [];
+
+  // Show user intent message then AI responds contextually
   setTimeout(() => {
     appendChatMessage('user', `I'm interested in ${serviceName}`);
+    chatHistory.push({ role: 'user', content: `I am interested in ${serviceName} (price starts from ₹${price})` });
+
     showTypingIndicator();
     setTimeout(() => {
       removeTypingIndicator();
-      appendChatMessage('ai', `Great choice! 🎨 ${serviceName} starts from ₹${price}.\n\nTo get started, tell me:\n1. What's your business/brand name?\n2. What industry are you in?\n3. Any style preferences (modern, minimal, bold, colorful)?`, null, 'Zea');
+      const aiMsg = `Great choice! 🎨
+
+**${serviceName}** starts from ₹${price}.
+
+To give you the best quote, I need a few details:
+1. What's your business/brand name?
+2. What industry are you in?
+3. Any style preferences — modern, minimal, bold, colorful?
+4. Do you have any reference images or competitor brands you like?`;
+      appendChatMessage('ai', aiMsg, null, 'Zea');
+      chatHistory.push({ role: 'assistant', content: aiMsg });
+
+      // Save AI message to Firebase chat history
+      saveChatMessageToHistory('ai', aiMsg);
     }, 1200);
   }, 300);
+}
+
+// Save every message to Firebase for your records
+async function saveChatMessageToHistory(from, text) {
+  if (!window._firebase || !window.currentChatSessionId) return;
+  const { db, collection, addDoc, serverTimestamp } = window._firebase;
+  addDoc(collection(db, `chatSessions/${window.currentChatSessionId}/messages`), {
+    from,
+    text,
+    userId: window.currentUserId || 'anonymous',
+    timestamp: serverTimestamp()
+  }).catch(() => {});
 }
 
 function showProductDetails(product) {
@@ -1282,15 +1587,44 @@ async function loginWithGoogle() {
   if (!window._firebase) { showToast('Firebase not configured yet', true); return; }
   const { auth, signInWithPopup, GoogleAuthProvider } = window._firebase;
   try {
-    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await signInWithPopup(auth, provider);
     window.currentUserName = result.user.displayName;
     window.currentUserEmail = result.user.email;
+    window.currentUserId = result.user.uid;
+    // Update profile page
     document.getElementById('profile-name').textContent = result.user.displayName;
     document.getElementById('profile-email').textContent = result.user.email;
+    if (result.user.photoURL) {
+      document.getElementById('profile-avatar').innerHTML = `<img src="${result.user.photoURL}" class="w-24 h-24 rounded-full object-cover" />`;
+    }
+    // Save user to Firebase
+    if (window._firebase) {
+      const { db, collection, addDoc, serverTimestamp } = window._firebase;
+      addDoc(collection(db, 'users'), {
+        uid: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email,
+        photo: result.user.photoURL || '',
+        lastLogin: serverTimestamp()
+      }).catch(() => {});
+    }
     showToast(`Welcome, ${result.user.displayName}! 🎉`);
-    toggleMenu();
+    // Close menu if open
+    document.getElementById('menu-overlay').classList.add('hidden');
+    document.getElementById('menu-panel').classList.add('translate-x-full');
   } catch (e) {
-    showToast('Sign in failed. Try again.', true);
+    console.error('Google sign-in error:', e);
+    if (e.code === 'auth/unauthorized-domain') {
+      showToast('⚠️ Add your domain in Firebase Console → Auth → Settings → Authorized domains', true);
+    } else if (e.code === 'auth/popup-blocked') {
+      showToast('Popup blocked! Allow popups for this site and try again.', true);
+    } else if (e.code === 'auth/cancelled-popup-request') {
+      // user closed popup — silent
+    } else {
+      showToast('Sign in failed: ' + (e.message || 'Try again'), true);
+    }
   }
 }
 
@@ -1332,6 +1666,7 @@ function initApp() {
   renderTrendingCarousel();
   renderServicesGrid();
   renderReviews();
+  renderFreebies();
   updateCartBadge();
   initChat();
 
