@@ -17,22 +17,23 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
     // ============================================================
     // 🔧 YOUR CONFIG — REPLACE THESE WITH YOUR FIREBASE VALUES
     // Get from: console.firebase.google.com → Project Settings
     // ============================================================
     const firebaseConfig = {
-      apiKey: "YOUR_FIREBASE_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyAUjUD5e2NdVKWBDVSdyQC9mSgJpmXwsms",
+      authDomain: "scrollzea-9f25b.firebaseapp.com",
+      projectId: "scrollzea-9f25b",
+      storageBucket: "scrollzea-9f25b.firebasestorage.app",
+      messagingSenderId: "358617619880",
+      appId: "1:358617619880:web:cc921eb240ad2b094e919d",
+      measurementId: "G-NYEV7P7CHZ"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -41,7 +42,7 @@
     const storage = getStorage(app);
 
     // Enable offline persistence (IndexedDB under the hood)
-    import { enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     enableIndexedDbPersistence(db).catch(() => {}); // silent fail if already enabled
 
     // Expose to window so non-module code can access
@@ -487,8 +488,8 @@ const RAZORPAY_KEY = "rzp_test_REPLACE_WITH_YOUR_KEY"; // Get from razorpay.com 
 // Instead, deploy the Cloudflare Worker and paste your worker URL below.
 // Guide: workers.cloudflare.com → Create Worker → paste worker code → add CLAUDE_KEY secret
 const CLOUDFLARE_WORKER_URL = "https://YOUR-WORKER.workers.dev/chat"; // ← replace this
-const TELEGRAM_BOT_TOKEN = "8699164364:AAEMcWSb5_I9yjmp_Y6IRC8pvJSt3h0SdhI";    // From @BotFather on Telegram
-const TELEGRAM_CHAT_ID = "5653758820";   // Your personal Telegram chat ID
+const TELEGRAM_BOT_TOKEN = "REPLACE_WITH_BOT_TOKEN";    // From @BotFather on Telegram
+const TELEGRAM_CHAT_ID = "REPLACE_WITH_YOUR_CHAT_ID";   // Your personal Telegram chat ID
 // ============================================================
 
 // ---- STATE ----
@@ -827,10 +828,14 @@ async function handleChatSend() {
   input.value = '';
   appendChatMessage('user', message);
 
-  // If booking is active — save to Firebase for two-way chat
+  // Always notify on Telegram — booking active or not
   if (currentBookingId) {
+    // Active booking — save to Firebase + notify
     await saveMessageToFirebase(currentBookingId, 'client', message);
     await notifyTelegram(`💬 <b>#${currentBookingId}</b> | Client message:\n\n${message}\n\nReply: /reply_${currentBookingId} [message]`);
+  } else {
+    // Pre-booking chat — just notify so you can see what people are asking
+    await notifyTelegram(`📩 <b>Pre-booking Chat</b>\n👤 ${window.currentUserName || 'Guest'} (${window.currentUserEmail || 'no email'})\n\n${message}`);
   }
 
   isAITyping = true;
@@ -890,6 +895,18 @@ function showPaymentCard(service, amount, brief) {
     </div>`;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
+
+  // Notify you on Telegram — someone is interested, payment card shown
+  notifyTelegram(
+    `👀 <b>HOT LEAD — Payment Card Shown!</b>\n\n` +
+    `📋 Booking ID: ${bookingId}\n` +
+    `🎨 Service: ${service}\n` +
+    `💰 Amount: ₹${amount}\n` +
+    `📝 Brief: ${brief}\n` +
+    `👤 User: ${window.currentUserName || 'Guest'}\n` +
+    `📧 Email: ${window.currentUserEmail || 'Not provided'}\n\n` +
+    `⏳ Waiting for payment...`
+  );
 }
 
 // ---- FILE UPLOAD ----
